@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacchu's Safe Space 🌙</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Poppins:wght@300;400;500;600&family=Sacramento&display=swap');
+
+        /* Base CSS Reset & Custom Properties */
+        :root {
+            --bg-dark: #08060c;
+            --bg-gradient: radial-gradient(circle at 50% 50%, #15102a 0%, #08060c 100%);
+            --text-main: #e5e0fa;
+            --text-muted: #cbc6e0;
+            --accent-rose: #e59a9a;
+            --accent-lavender: #a58cf5;
+            --glow-warm: #ffe066;
+            --glass-bg: rgba(25, 20, 38, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- Ambient Backdrop Effects --- */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        @keyframes starTwinkle {
+            0% { opacity: 0.1; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .star {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: starTwinkle ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        .ambient-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 70vw;
+            height: 70vh;
+            background: radial-gradient(circle, rgba(165, 140, 245, 0.04) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            z-index: -3;
+            pointer-events: none;
+        }
+
+        /* --- Audio Gate Overlay --- */
+        #gate-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #06040a;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #gate-screen.fade-out {
+            opacity: 0;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        .gate-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(229, 154, 154, 0.3);
+            padding: 16px 36px;
+            border-radius: 50px;
+            color: var(--accent-rose);
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 25px rgba(229, 154, 154, 0.05);
+            margin-top: 10px;
+        }
+
+        .gate-btn:hover {
+            background: rgba(229, 154, 154, 0.1);
+            box-shadow: 0 6px 30px rgba(229, 154, 154, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* --- Layout Container --- */
+        .app-wrapper {
+            width: 100%;
+            max-width: 700px;
+            padding: 40px 20px;
+            z-index: 10;
+            display: none; 
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .app-wrapper.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        /* --- Header Controls --- */
+        .app-header {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+
+        .sound-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            padding: 8px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .sound-toggle-container:hover {
+            border-color: rgba(165, 140, 245, 0.3);
+        }
+
+        .music-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            width: 20px;
+            height: 15px;
+        }
+
+        .music-bars .bar {
+            width: 2px;
+            background: var(--accent-lavender);
+            border-radius: 1px;
+            height: 2px;
+            transition: height 0.3s ease;
+        }
+
+        .music-bars.playing .bar {
+            animation: bounceBars 0.8s infinite ease-in-out alternate;
+        }
+
+        .music-bars.playing .bar:nth-child(1) { animation-delay: 0.1s; }
+        .music-bars.playing .bar:nth-child(2) { animation-delay: 0.3s; }
+        .music-bars.playing .bar:nth-child(3) { animation-delay: 0.2s; }
+        .music-bars.playing .bar:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes bounceBars {
+            0% { height: 2px; }
+            100% { height: 15px; }
+        }
+
+        .sound-icon {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-main);
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Base Screen Transitions --- */
+        .app-screen {
+            width: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(15px);
+            transition: opacity 0.5s ease, transform 0.5s ease, visibility 0.5s ease;
+            position: absolute;
+            left: 0;
+            top: 0;
+            pointer-events: none;
+        }
+
+        .app-screen.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            position: relative;
+            pointer-events: auto;
+        }
+
+        /* --- Text styling & typography --- */
+        .text-center {
+            text-align: center;
+        }
+
+        .cursive-highlight {
+            font-family: 'Sacramento', cursive;
+            font-size: 2.2rem;
+            color: var(--accent-rose);
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--accent-rose);
+            margin-bottom: 12px;
+            font-weight: 500;
+            line-height: 1.3;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-muted);
+            max-width: 580px;
+            margin: 0 auto;
+        }
+
+        /* --- Cozy Room Aesthetic Widget --- */
+        .widget-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px auto;
+            max-width: 320px;
+            position: relative;
+        }
+
+        .cozy-lamp-container {
+            width: 60px;
+            height: 120px;
+            position: relative;
+            margin-right: -25px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .lamp-shade {
+            width: 40px;
+            height: 25px;
+            background: #ff7597;
+            border-radius: 50% 50% 0 0;
+            position: absolute;
+            top: 30px;
+            left: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .lamp-glow {
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, rgba(255, 180, 100, 0.22) 0%, rgba(255, 180, 100, 0.05) 50%, transparent 70%);
+            border-radius: 50%;
+            position: absolute;
+            top: 30px;
+            left: -40px;
+            pointer-events: none;
+            animation: pulseLamp 4s infinite ease-in-out alternate;
+        }
+
+        @keyframes pulseLamp {
+            0% { opacity: 0.8; }
+            100% { opacity: 1.2; }
+        }
+
+        .window-pane {
+            position: relative;
+            width: 140px;
+            height: 200px;
+            border: 5px solid #1a162b;
+            border-radius: 12px;
+            background: rgba(10, 8, 15, 0.85);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .window-pane::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(90deg, transparent 49%, rgba(40, 35, 60, 0.5) 49%, rgba(40, 35, 60, 0.5) 51%, transparent 51%),
+                linear-gradient(180deg, transparent 49%, rgba(40, 35, 60, 0.5) 49%, rgba(40, 35, 60, 0.5) 51%, transparent 51%);
+            pointer-events: none;
+        }
+
+        .rain-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .rain-streak {
+            position: absolute;
+            background: linear-gradient(to bottom, transparent, rgba(165, 140, 245, 0.45));
+            width: 1px;
+            animation: rainFall linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rainFall {
+            0% { transform: translateY(-50px); }
+            100% { transform: translateY(210px); }
+        }
+
+        /* --- Action Grid Buttons --- */
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .buttons-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .action-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 22px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(12px);
+        }
+
+        .action-btn:hover {
+            background: rgba(165, 140, 245, 0.05);
+            border-color: rgba(165, 140, 245, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(165, 140, 245, 0.12);
+        }
+
+        .btn-icon {
+            font-size: 26px;
+            filter: drop-shadow(0 0 6px rgba(165, 140, 245, 0.25));
+        }
+
+        .btn-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            text-align: center;
+        }
+
+        /* --- Back Buttons --- */
+        .back-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--accent-lavender);
+            border-radius: 30px;
+            padding: 10px 24px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 35px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(165, 140, 245, 0.04);
+            border-color: rgba(165, 140, 245, 0.3);
+            color: var(--text-main);
+            transform: translateX(-3px);
+        }
+
+        /* --- Stressed Screen: Breathing Ring --- */
+        .breathing-ring-wrapper {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            margin: 40px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .breathing-ring-outer {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 1px dashed rgba(165, 140, 245, 0.15);
+            animation: rotateOuter 25s linear infinite;
+        }
+
+        @keyframes rotateOuter {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .breathing-ring-inner {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(165, 140, 245, 0.15) 0%, rgba(165, 140, 245, 0.02) 80%);
+            border: 2px solid rgba(165, 140, 245, 0.25);
+            box-shadow: 0 0 25px rgba(165, 140, 245, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 4s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        }
+
+        #breathing-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
+
+        .emotional-para {
+            font-size: 14.5px;
+            line-height: 1.8;
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 25px auto 0 auto;
+        }
+
+        .emotional-para em {
+            color: var(--accent-rose);
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* --- Missing Screen: Smartphone Video Mockup --- */
+        .phone-mockup {
+            width: 260px;
+            height: 440px;
+            border: 8px solid rgba(60, 50, 90, 0.8);
+            border-radius: 36px;
+            background: #090710;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            margin: 30px auto;
+        }
+
+        @media (max-height: 680px) {
+            .phone-mockup {
+                width: 220px;
+                height: 380px;
+                margin: 15px auto;
+            }
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: radial-gradient(circle at bottom, rgba(165, 140, 245, 0.12), transparent);
+        }
+
+        .phone-header {
+            font-size: 10px;
+            color: var(--accent-lavender);
+            text-align: center;
+            letter-spacing: 1.5px;
+        }
+
+        .phone-content {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .phone-slide {
+            position: absolute;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.8s ease-in-out;
+            color: #e5e0fa;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .phone-slide.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .phone-slide em {
+            font-style: italic;
+            color: var(--accent-rose);
+            font-weight: 500;
+        }
+
+        .mock-pip {
+            position: absolute;
+            top: 5px;
+            right: 0px;
+            width: 50px;
+            height: 70px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .mock-pip::after {
+            content: '👤';
+            opacity: 0.5;
+        }
+
+        .phone-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        .phone-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #fff;
+        }
+
+        .phone-btn.decline {
+            background: #ff4a5a;
+        }
+
+        /* --- Can't Sleep Screen: bedtime Mode --- */
+        .sleep-mode-container {
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            padding: 20px;
+        }
+
+        .moon-icon {
+            font-size: 42px;
+            filter: drop-shadow(0 0 15px rgba(229, 224, 250, 0.35));
+            margin-bottom: 25px;
+            animation: floatMoon 4s infinite ease-in-out alternate;
+        }
+
+        @keyframes floatMoon {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-6px); }
+        }
+
+        #bedtime-story-wrapper {
+            min-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        #bedtime-story-text {
+            font-size: 17px;
+            line-height: 1.8;
+            color: var(--text-muted);
+            transition: all 0.4s ease;
+        }
+
+        #bedtime-instruction {
+            font-size: 11px;
+            color: var(--accent-lavender);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 30px;
+            opacity: 0.6;
+            animation: pulseInstruction 2s infinite alternate;
+        }
+
+        @keyframes pulseInstruction {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.8; }
+        }
+
+        /* --- Smile Screen: Compliment Jar --- */
+        .jar-container {
+            width: 130px;
+            height: 190px;
+            margin: 30px auto;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .jar-container:active {
+            transform: scale(0.96);
+        }
+
+        .jar-lid {
+            width: 80px;
+            height: 22px;
+            background: linear-gradient(90deg, #d4af37, #f3e5ab, #d4af37);
+            border-radius: 6px 6px 0 0;
+            margin: 0 auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .jar-body {
+            width: 120px;
+            height: 168px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 2.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 0 0 36px 36px;
+            margin: -2px auto 0 auto;
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.4);
+            backdrop-filter: blur(6px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .jar-glow-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ffe066;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ffcc00;
+            animation: floatParticle 3s infinite ease-in-out alternate;
+        }
+
+        .jar-heart {
+            position: absolute;
+            font-size: 22px;
+            animation: pulseHeart 1.5s infinite ease-in-out;
+        }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(0) scale(0.8); opacity: 0.5; }
+            100% { transform: translateY(-12px) scale(1.15); opacity: 1; }
+        }
+
+        @keyframes pulseHeart {
+            0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255, 117, 151, 0.4)); }
+            50% { transform: scale(1.12); filter: drop-shadow(0 0 8px rgba(255, 117, 151, 0.8)); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255, 117, 151, 0.4)); }
+        }
+
+        .jar-bounce {
+            animation: jarBounce 0.5s ease;
+        }
+
+        @keyframes jarBounce {
+            0% { transform: scale(1); }
+            25% { transform: translateY(-8px) rotate(-4deg); }
+            50% { transform: translateY(0) scaleY(0.92) rotate(4deg); }
+            75% { transform: translateY(-4px) rotate(-2deg); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        .compliment-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 18px 22px;
+            border-radius: 16px;
+            margin: 20px auto 0 auto;
+            max-width: 440px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #f0e6ff;
+            min-height: 75px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.92);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .compliment-box.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* --- Gratitude Card (Envelope) --- */
+        .gratitude-trigger {
+            background: linear-gradient(135deg, rgba(229, 154, 154, 0.06), rgba(165, 140, 245, 0.06));
+            border: 1px solid rgba(229, 154, 154, 0.15);
+            border-radius: 18px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            margin-top: 35px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .gratitude-trigger:hover {
+            transform: translateY(-2px);
+            border-color: rgba(229, 154, 154, 0.3);
+            background: linear-gradient(135deg, rgba(229, 154, 154, 0.1), rgba(165, 140, 245, 0.1));
+            box-shadow: 0 6px 25px rgba(229, 154, 154, 0.08);
+        }
+
+        .gratitude-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent-rose);
+        }
+
+        .gratitude-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .gratitude-arrow {
+            color: var(--accent-rose);
+            font-size: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .gratitude-trigger:hover .gratitude-arrow {
+            transform: translateX(4px);
+        }
+
+        /* --- Gratitude Modal Backdrop & Paper --- */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(6, 4, 10, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .gratitude-modal {
+            background: linear-gradient(135deg, #181426, #0d091a);
+            border: 1px solid rgba(229, 154, 154, 0.2);
+            border-radius: 24px;
+            padding: 30px 24px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.6);
+            transform: scale(0.92) translateY(15px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+        }
+
+        .modal-backdrop.active .gratitude-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .letter-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-main);
+        }
+
+        .letter-text p {
+            margin-bottom: 15px;
+        }
+
+        .letter-text em {
+            color: var(--accent-rose);
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        .modal-close-btn {
+            background: rgba(229, 154, 154, 0.08);
+            border: 1px solid rgba(229, 154, 154, 0.25);
+            color: var(--accent-rose);
+            border-radius: 30px;
+            padding: 11px 24px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 25px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(229, 154, 154, 0.18);
+            transform: translateY(-1px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sound Element -->
+    <audio id="bg-audio" loop></audio>
+
+    <!-- Background Stars Overlay -->
+    <div class="stars-container" id="stars-container"></div>
+    <div class="ambient-glow"></div>
+
+    <!-- Screen 0: Interaction unlocking gate (Autoplay guard) -->
+    <div id="gate-screen">
+        <span class="cursive-highlight" style="font-size: 3.2rem; margin-bottom: 12px;">Welcome, bacchu... 🌙</span>
+        <p style="font-family: 'Poppins', sans-serif; font-size: 14px; color: var(--text-muted); opacity: 0.9; margin-bottom: 25px; text-align: center; max-width: 310px; line-height: 1.6;">
+            Step inside your private digital shelter where my entire heart is waiting to protect you.
+        </p>
+        <button class="gate-btn" onclick="unlockSanctuary()">Enter Safe Space ✨</button>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <div class="app-wrapper" id="app-wrapper">
+        
+        <!-- Sound Indicators Control -->
+        <header class="app-header">
+            <div class="sound-toggle-container" onclick="toggleMute()">
+                <div class="music-bars" id="music-bars">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+                <button class="sound-toggle-btn" style="background:none; border:none; cursor:pointer;">
+                    <svg id="unmute-icon" class="sound-icon" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.25-2.5-4.06v8.11c1.48-.81 2.5-2.29 2.5-4.05zm-2.5-8.22v2.02c2.72.8 4.75 3.32 4.75 6.3s-2.03 5.5-4.75 6.3v2.02c3.84-.87 6.75-4.31 6.75-8.32s-2.91-7.45-6.75-8.32z"/>
+                    </svg>
+                    <svg id="mute-icon" class="sound-icon hidden" viewBox="0 0 24 24">
+                        <path d="M16.5 12c0-1.77-1.02-3.25-2.5-4.06v2.23l2.48 2.48c.01-.22.02-.43.02-.65zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Screen 1: Home Dashboard -->
+        <div id="home-screen" class="app-screen active">
+            <div class="screen-content text-center">
+                <div class="welcome-box">
+                    <span class="cursive-highlight" style="font-size: 2.8rem; display: block; margin-bottom: 8px;">
+                        Welcome to your safe space, bacchu... 🌙
+                    </span>
+                    <p class="subtitle">
+                        I know days can get heavy, and I might not always be a phone call away. But my love is always right here protecting you. Tell me, how is my girl feeling right now?
+                    </p>
+                </div>
+
+                <div class="widget-row">
+                    <div class="cozy-lamp-container">
+                        <div class="lamp-shade"></div>
+                        <div class="lamp-glow"></div>
+                    </div>
+                    <div class="window-pane">
+                        <div class="rain-container"></div>
+                    </div>
+                </div>
+
+                <div class="buttons-grid">
+                    <button class="action-btn" onclick="transitionTo('stressed-screen', 'stressed')">
+                        <span class="btn-icon">🍃</span>
+                        <span class="btn-text">Overwhelmed / Stressed</span>
+                    </button>
+                    <button class="action-btn" onclick="transitionTo('missing-screen', 'missing')">
+                        <span class="btn-icon">🫂</span>
+                        <span class="btn-text">Missing You So Much</span>
+                    </button>
+                    <button class="action-btn" onclick="transitionTo('sleep-screen', 'sleep')">
+                        <span class="btn-icon">🌌</span>
+                        <span class="btn-text">Overthinking / Can't Sleep</span>
+                    </button>
+                    <button class="action-btn" onclick="transitionTo('smile-screen', 'smile')">
+                        <span class="btn-icon">✨</span>
+                        <span class="btn-text">Just Need a Smile</span>
+                    </button>
+                </div>
+
+                <div class="gratitude-trigger" onclick="openGratitudeModal()">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <span style="font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">✉️</span>
+                        <div style="text-align: left;">
+                            <div class="gratitude-title">A Note of Pure Gratitude</div>
+                            <div class="gratitude-sub">For my beautiful morning alarm clock & sukoon...</div>
+                        </div>
+                    </div>
+                    <span class="gratitude-arrow">→</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- State Screen 1: Overwhelmed / Stressed -->
+        <div id="stressed-screen" class="app-screen">
+            <div class="screen-content text-center">
+                <h2 class="section-title">Just breathe, bacchu... 🌬️</h2>
+                
+                <div class="breathing-ring-wrapper">
+                    <div class="breathing-ring-outer"></div>
+                    <div class="breathing-ring-inner">
+                        <span id="breathing-text">Breathe In...</span>
+                    </div>
+                </div>
+
+                <p class="emotional-para">
+                    Take a pause, *bacchu*. Whatever is stressing you out right now is completely temporary. You are incredibly strong, and I am right here standing by your side. You don't have to carry the weight of the world alone. Take a deep breath for me, okay? I've got your back, always.
+                </p>
+
+                <button class="back-btn" onclick="transitionTo('home-screen', 'home')">
+                    ← Back to My Safe Space
+                </button>
+            </div>
+        </div>
+
+        <!-- State Screen 2: Missing You So Much -->
+        <div id="missing-screen" class="app-screen">
+            <div class="screen-content text-center">
+                <h2 class="section-title">Holding you close... 🫂</h2>
+
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="phone-header">
+                            <span>HEALING TIME 💖</span>
+                            <div style="font-size: 7px; opacity: 0.7; margin-top: 1px;">connected • forever</div>
+                        </div>
+
+                        <div class="phone-content">
+                            <div class="phone-slide active">
+                                I miss you too, more than words can ever say, <em>bacchu</em>.
+                            </div>
+                            <div class="phone-slide">
+                                Close your eyes for a second. Take a slow, quiet breath.
+                            </div>
+                            <div class="phone-slide">
+                                <em>Remember our very first hug at night?</em>
+                            </div>
+                            <div class="phone-slide">
+                                <em>Remember how rapidly my heart was beating against yours?</em>
+                            </div>
+                            <div class="phone-slide">
+                                That beat hasn't slowed down for a single second. Distance changes absolutely nothing.
+                            </div>
+                            <div class="phone-slide">
+                                I am holding you so tight in my thoughts right now, my pyara bacchu.
+                            </div>
+                            <div class="phone-slide">
+                                You completely own my entire heart. Call me as soon as you can. 💕💖
+                            </div>
+
+                            <div class="mock-pip"></div>
+                        </div>
+
+                        <div class="phone-controls">
+                            <div class="phone-btn">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/></svg>
+                            </div>
+                            <div class="phone-btn decline" onclick="transitionTo('home-screen', 'home')">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm1 14h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                            </div>
+                            <div class="phone-btn">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="emotional-para" style="font-size: 13.5px; opacity: 0.85; margin-top: 5px;">
+                    Our late night videocalls are our absolute *healing time*. Keep this visual close until I can hold you again.
+                </p>
+
+                <button class="back-btn" onclick="transitionTo('home-screen', 'home')">
+                    ← Back to My Safe Space
+                </button>
+            </div>
+        </div>
+
+        <!-- State Screen 3: Overthinking / Can't Sleep -->
+        <div id="sleep-screen" class="app-screen">
+            <div class="screen-content text-center sleep-mode-container" onclick="handleBedtimeTap()">
+                <div class="moon-icon">🌙</div>
+                <div id="bedtime-story-wrapper">
+                    <p id="bedtime-story-text">Tap anywhere to let go of the day, bacchu... Let me read you to sleep. 😴</p>
+                </div>
+                <span id="bedtime-instruction">Tap the screen...</span>
+
+                <div>
+                    <button class="back-btn" onclick="event.stopPropagation(); transitionTo('home-screen', 'home')">
+                        ← Back to My Safe Space
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- State Screen 4: Just Need a Smile -->
+        <div id="smile-screen" class="app-screen">
+            <div class="screen-content text-center">
+                <h2 class="section-title">A Jar Full of Smiles ✨</h2>
+                <p class="emotional-para" style="font-size: 14px; margin-bottom: 5px; max-width: 440px;">
+                    Whenever those gorgeous eyes get teary, tap the magic jar below to pop out a custom note from me to make my *bacchu* smile.
+                </p>
+
+                <div class="jar-container" onclick="triggerJarCompliment()">
+                    <div class="jar-lid"></div>
+                    <div class="jar-body">
+                        <div class="jar-glow-particle" style="top: 25%; left: 35%; animation-delay: 0.2s;"></div>
+                        <div class="jar-glow-particle" style="top: 45%; left: 20%; animation-delay: 0.5s;"></div>
+                        <div class="jar-glow-particle" style="top: 65%; left: 55%; animation-delay: 0.1s;"></div>
+                        <div class="jar-glow-particle" style="top: 35%; left: 70%; animation-delay: 0.8s;"></div>
+                        <div class="jar-glow-particle" style="top: 55%; left: 45%; animation-delay: 0.3s;"></div>
+                        <div class="jar-heart" style="top: 40%; left: 40%;">💖</div>
+                    </div>
+                </div>
+
+                <div class="compliment-box" id="compliment-display">
+                    Tap the jar to retrieve your note...
+                </div>
+
+                <button class="back-btn" onclick="transitionTo('home-screen', 'home')">
+                    ← Back to My Safe Space
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal Backdrop containing the Gratitude Love Letter -->
+    <div class="modal-backdrop" id="gratitude-modal-backdrop" onclick="closeGratitudeModal()">
+        <div class="gratitude-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span class="cursive-highlight" style="font-size: 2.1rem; color: var(--accent-rose);">A Note of Pure Gratitude ✉️</span>
+            </div>
+            <div class="modal-body letter-text">
+                <p>My pyara bacchu,</p>
+                <p>Sometimes I look at you and wonder what incredible deed I did in my past life to deserve your presence in this one. I want to take a slow moment to say thank you for just existing.</p>
+                <p><em>Thank you for your morning calls.</em> They are my permanent, favorite alarm clock. The sweetest melody that starts my day and makes me feel so deeply protected and cherished before my eyes even fully open. Sleepy-voiced or fully awake, your words are my daily fuel.</p>
+                <p><em>Thank you for your healing presence.</em> You have completely cured my hardest, darkest days. Whenever the world gets too chaotic and exhausting, just knowing you are mine brings a profound, quiet <strong>sukoon</strong> to my soul.</p>
+                <p>I feel like the luckiest human in this entire universe to be loved by someone as pure, as beautiful, and as perfect as you, my baccha. You are my home, my anchor, and my entire world.</p>
+                <p class="cursive-highlight" style="text-align: right; width: 100%; font-size: 2rem; margin-top: 15px; color: var(--accent-rose);">Always yours, <br>Your puru 🤍</p>
+            </div>
+            <button class="modal-close-btn" onclick="closeGratitudeModal()">Close my letter 🤍</button>
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+        const audio = document.getElementById('bg-audio');
+        let currentTrackState = '';
+        let isMuted = false;
+
+        const tracks = {
+            home: 'https://raw.githubusercontent.com/SillyTavern/SillyTavern-Content/main/assets/ambient/landscape-beach-night.mp3',
+            stressed: 'https://raw.githubusercontent.com/SillyTavern/SillyTavern-Content/main/assets/ambient/landscape-beach-night.mp3',
+            missing: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+            sleep: 'https://raw.githubusercontent.com/SillyTavern/SillyTavern-Content/main/assets/ambient/bedroom-clean.mp3',
+            smile: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+        };
+
+        const compliments = [
+            "Reminder: You look incredibly cute even when you're throwing a massive tantrum, bacchu.",
+            "You are officially stuck with me forever, bacchu. Absolutely no refunds, no exchanges!",
+            "Go look in the mirror for a second. See that breathtaking girl? She is the exact reason my entire world is so bright.",
+            "I am completely, entirely, beautifully addicted to my pyara bacchu.",
+            "You have this magical power, baccha, to heal my hardest days with just a tiny giggle.",
+            "Even if the universe decided to reset itself, I'd search every galaxy just to find you again.",
+            "No matter how grumpy you get, you will always be my most precious baby.",
+            "My favorite spot in the entire world? Wrapped in your arms, listening to your soft breaths.",
+            "Just in case you forgot: You are my sukoon, my home, and my favorite daily distraction.",
+            "You are the sweetest, most gorgeous girl in the whole wide universe, my pyara bacchu!",
+            "Your smile is my daily dose of healing time. Never lose it, my baccha.",
+            "I love you more than all the stars in the midnight sky. Yes, even the tiny twinkling ones!",
+            "Do you know what my favorite bedtime story is? It's you, complaining about some random girl's eyeliner for 45 minutes straight. 😭❤️",
+            "I love you more than you love overthinking things that literally haven't even happened yet, bacchu!",
+            "You: 'I have nothing to wear!' Also you: *has a closet exploding with clothes*. Don't worry, you look best in my oversized hoodies anyway. 🧸",
+            "If being a cute, dramatic drama queen was a full-time job, you'd be a self-made billionaire by now, baccha!",
+            "Warning: Side effects of opening this jar include an immediate urge to call me and tell me you love me. Do it, no excuses!",
+            "My favorite pastime? Annoying you until you make that cute angry face, and then kissing you before you can even yell at me.",
+            "I am 99% sure you are a tiny kitten in a human costume. You sleep all day, demand cuddles at 3 AM, and bite me when I love you too much. 🐱",
+            "Even when you are absolutely roping me into your imaginary scenarios where I bought the wrong flavor of ice cream, I still adore you.",
+            "I love you even when you steal my fries after saying 'No, I don't want anything, I'm not hungry.' 🍟",
+            "You are the only person I would willingly share my last slice of pizza with... Actually, scratch that, I'd give you the whole pizza. 🍕",
+            "Your level of drama is unmatched, pyara bacchu. Bollywood is literally crying in a corner watching you react to a mild inconvenience.",
+            "If I had a dollar for every time you said 'Wait, listen...' and then forgot what you were saying, we could buy our own island by now.",
+            "I have officially filed a complaint with the universe. How are you allowed to look so ridiculously breathtaking even with messy morning hair?!",
+            "Just a quick reminder: You are mine. Contract signed, thumbprint taken. No escape route available, baccha!",
+            "You're like a little pocket-sized package of pure sunshine... but with a tiny hidden knife for when I tease you too much.",
+            "Even when you threaten to block me for the 47th time in a day, I know you're just craving my attention. And guess what? You always have it."
+        ];
+
+        const bedtimeSentences = [
+            "Turn off your thoughts, <span class='cursive-highlight' style='font-size:2.2rem;'>bacchu</span>.",
+            "Your beautiful brain is tired from being so amazing all day long.",
+            "Let go of all the worries, the tomorrows, and the 'what-ifs'.",
+            "Put your phone down after this, pull the blanket up cozy and warm...",
+            "...and know that the very first thing I want to hear in the morning is your voice ringing on my phone.",
+            "I am right here keeping you safe in my heart, always.",
+            "Sleep tight, my favorite human. <br><span class='cursive-highlight' style='font-size:2.3rem; color:#e59a9a; margin-top:10px; display:inline-block;'>I love you, my baccha. 🤍</span>"
+        ];
+
+        let currentBedtimeIndex = 0;
+        let fadeInterval = null;
+        let breathingTimer = null;
+        let missingSlidesTimer = null;
+        let currentSlideIndex = 0;
+
+        function unlockSanctuary() {
+            const gate = document.getElementById('gate-screen');
+            gate.classList.add('fade-out');
+
+            const app = document.getElementById('app-wrapper');
+            app.classList.add('visible');
+
+            playTrack('home');
+
+            const bars = document.getElementById('music-bars');
+            if (bars) bars.classList.add('playing');
+
+            setTimeout(() => {
+                gate.style.display = 'none';
+            }, 800);
+        }
+
+        function playTrack(state) {
+            const url = tracks[state];
+            if (!url) return;
+            if (currentTrackState === state && !audio.paused) return;
+            
+            currentTrackState = state;
+
+            if (fadeInterval) {
+                clearInterval(fadeInterval);
+            }
+
+            let currentVol = audio.volume;
+            fadeInterval = setInterval(() => {
+                if (currentVol > 0.05) {
+                    currentVol -= 0.05;
+                    audio.volume = currentVol;
+                } else {
+                    clearInterval(fadeInterval);
+                    audio.volume = 0;
+                    audio.src = url;
+                    audio.load();
+
+                    if (!isMuted) {
+                        audio.play().then(() => {
+                            let targetVol = 0.45;
+                            if (state === 'sleep') targetVol = 0.25; 
+                            currentVol = 0;
+                            fadeInterval = setInterval(() => {
+                                if (currentVol < targetVol) {
+                                    currentVol += 0.03;
+                                    audio.volume = currentVol;
+                                } else {
+                                    audio.volume = targetVol;
+                                    clearInterval(fadeInterval);
+                                }
+                            }, 50);
+                        }).catch(err => {
+                            console.log("Audio block details: ", err);
+                        });
+                    }
+                }
+            }, 30);
+        }
+
+        function toggleMute() {
+            const unmuteIcon = document.getElementById('unmute-icon');
+            const muteIcon = document.getElementById('mute-icon');
+            const bars = document.getElementById('music-bars');
+
+            if (audio.muted) {
+                audio.muted = false;
+                isMuted = false;
+                unmuteIcon.classList.remove('hidden');
+                muteIcon.classList.add('hidden');
+                bars.classList.add('playing');
+                if (audio.paused) {
+                    audio.play().catch(err => console.log(err));
+                }
+            } else {
+                audio.muted = true;
+                isMuted = true;
+                unmuteIcon.classList.add('hidden');
+                muteIcon.classList.remove('hidden');
+                bars.classList.remove('playing');
+            }
+        }
+
+        function transitionTo(screenId, stateName) {
+            const screens = document.querySelectorAll('.app-screen');
+            screens.forEach(screen => {
+                screen.classList.remove('active');
+            });
+
+            const target = document.getElementById(screenId);
+            target.classList.add('active');
+
+            playTrack(stateName);
+
+            if (stateName === 'sleep') {
+                document.body.style.overflow = 'hidden';
+                resetSleepStory();
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+
+            if (stateName === 'stressed') {
+                startBreathingRing();
+            } else {
+                stopBreathingRing();
+            }
+
+            if (stateName === 'missing') {
+                startMissingSlides();
+            } else {
+                stopMissingSlides();
+            }
+        }
+
+        function startBreathingRing() {
+            const ring = document.querySelector('.breathing-ring-inner');
+            const textEl = document.getElementById('breathing-text');
+            if (!ring || !textEl) return;
+
+            let phase = 0; 
+
+            function step() {
+                if (phase === 0) {
+                    ring.style.transform = 'scale(1.4)';
+                    ring.style.borderColor = 'rgba(165, 140, 245, 0.7)';
+                    ring.style.boxShadow = '0 0 35px rgba(165, 140, 245, 0.4)';
+                    textEl.innerText = 'Breathe In...';
+                    phase = 1;
+                } else if (phase === 1) {
+                    textEl.innerText = 'Hold...';
+                    phase = 2;
+                } else {
+                    ring.style.transform = 'scale(1.0)';
+                    ring.style.borderColor = 'rgba(165, 140, 245, 0.25)';
+                    ring.style.boxShadow = '0 0 15px rgba(165, 140, 245, 0.1)';
+                    textEl.innerText = 'Breathe Out...';
+                    phase = 0;
+                }
+            }
+
+            step();
+            breathingTimer = setInterval(step, 4000);
+        }
+
+        function stopBreathingRing() {
+            if (breathingTimer) {
+                clearInterval(breathingTimer);
+                breathingTimer = null;
+            }
+        }
+
+        function startMissingSlides() {
+            const slides = document.querySelectorAll('.phone-slide');
+            if (slides.length === 0) return;
+
+            slides.forEach(s => s.classList.remove('active'));
+            currentSlideIndex = 0;
+            slides[0].classList.add('active');
+
+            // Timeout increased from 5 seconds to 8.5 seconds (8500ms) for smoother reading
+            missingSlidesTimer = setInterval(() => {
+                slides[currentSlideIndex].classList.remove('active');
+                currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+                slides[currentSlideIndex].classList.add('active');
+            }, 8500);
+        }
+
+        function stopMissingSlides() {
+            if (missingSlidesTimer) {
+                clearInterval(missingSlidesTimer);
+                missingSlidesTimer = null;
+            }
+        }
+
+        function handleBedtimeTap() {
+            const textEl = document.getElementById('bedtime-story-text');
+            const instructionEl = document.getElementById('bedtime-instruction');
+            if (!textEl || !instructionEl) return;
+
+            if (currentBedtimeIndex >= bedtimeSentences.length) {
+                textEl.innerHTML = "<span class='cursive-highlight' style='font-size: 2.3rem;'>Sweet Dreams, My Baccha 🧸</span>";
+                instructionEl.innerText = "Close your eyes now. I've got you.";
+                return;
+            }
+
+            textEl.style.opacity = 0;
+            textEl.style.transform = 'translateY(-10px)';
+
+            setTimeout(() => {
+                textEl.innerHTML = bedtimeSentences[currentBedtimeIndex];
+                textEl.style.opacity = 1;
+                textEl.style.transform = 'translateY(0)';
+                currentBedtimeIndex++;
+
+                if (currentBedtimeIndex === bedtimeSentences.length) {
+                    instructionEl.innerText = "Tap one last time...";
+                } else {
+                    instructionEl.innerText = "Tap anywhere to read further...";
+                }
+            }, 400);
+        }
+
+        function resetSleepStory() {
+            currentBedtimeIndex = 0;
+            const textEl = document.getElementById('bedtime-story-text');
+            const instructionEl = document.getElementById('bedtime-instruction');
+            if (textEl && instructionEl) {
+                textEl.style.opacity = 1;
+                textEl.style.transform = 'translateY(0)';
+                textEl.innerHTML = "Tap anywhere to let go of the day, bacchu... Let me read you to sleep. 😴";
+                instructionEl.innerText = "Tap the screen...";
+            }
+        }
+
+        function triggerJarCompliment() {
+            const jar = document.querySelector('.jar-container');
+            const displayBox = document.getElementById('compliment-display');
+            if (!jar || !displayBox) return;
+
+            jar.classList.add('jar-bounce');
+            setTimeout(() => jar.classList.remove('jar-bounce'), 500);
+
+            displayBox.classList.remove('show');
+
+            setTimeout(() => {
+                const randomQuote = compliments[Math.floor(Math.random() * compliments.length)];
+                displayBox.innerHTML = randomQuote;
+                displayBox.classList.add('show');
+            }, 200);
+        }
+
+        function openGratitudeModal() {
+            const modal = document.getElementById('gratitude-modal-backdrop');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeGratitudeModal() {
+            const modal = document.getElementById('gratitude-modal-backdrop');
+            modal.classList.remove('active');
+            const sleepScreen = document.getElementById('sleep-screen');
+            if (!sleepScreen.classList.contains('active')) {
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function createStars() {
+            const container = document.getElementById('stars-container');
+            if (!container) return;
+            for (let i = 0; i < 45; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                const size = 1 + Math.random() * 2;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.animationDuration = `${1.5 + Math.random() * 3}s`;
+                star.style.animationDelay = `${Math.random() * 4}s`;
+                container.appendChild(star);
+            }
+        }
+
+        function createRain() {
+            const container = document.querySelector('.rain-container');
+            if (!container) return;
+            for (let i = 0; i < 20; i++) {
+                const streak = document.createElement('div');
+                streak.classList.add('rain-streak');
+                streak.style.left = `${Math.random() * 100}%`;
+                streak.style.top = `${Math.random() * -50}px`;
+                streak.style.height = `${15 + Math.random() * 20}px`;
+                streak.style.animationDuration = `${0.6 + Math.random() * 0.4}s`;
+                streak.style.animationDelay = `${Math.random() * 1.5}s`;
+                container.appendChild(streak);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            createRain();
+        });
+    </script>
+</body>
+</html>
